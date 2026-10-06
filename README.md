@@ -36,7 +36,7 @@ sube al repositorio; `.env.example` es la plantilla.
 | `DB_PASSWORD` | Contraseña de MySQL | (obligatoria)     |
 
 > Si el puerto 3306 ya está ocupado (por ejemplo, por otro MySQL), cambia
-> `DB_PORT` en `.env` (p. ej. `3307`). Docker Compose y la aplicación usan ese
+>
 > mismo valor.
 
 ### 2. Levantar MySQL con Docker
@@ -95,15 +95,17 @@ Tabla `fruta`:
 | `unidad`   | `VARCHAR(20)`   | Obligatorio (p. ej. `unidad`, `kg`)             |
 
 > Como el script usa `IF NOT EXISTS`, los cambios en `schema.sql` no se aplican
-> a una tabla que ya existe. En desarrollo, borra la tabla (o el volumen con
+>
 > `docker compose down -v`) para que se vuelva a crear.
 
 ### Conexión con un cliente (DBeaver)
 
 1. Nueva conexión → MySQL.
 2. Host `localhost`, puerto el de `DB_PORT` en tu `.env`, base `puesto_frutas`,
+
    usuario `root` y la contraseña de tu `.env`.
 3. En la pestaña *Driver properties* poner `allowPublicKeyRetrieval=true` y
+
    `useSSL=false` (si no, MySQL 8 responde "Public Key Retrieval is not allowed").
 
 La tabla `fruta` aparece después de arrancar la aplicación por primera vez.
