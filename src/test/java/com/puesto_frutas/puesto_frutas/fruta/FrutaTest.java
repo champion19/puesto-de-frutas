@@ -1,37 +1,133 @@
 package com.puesto_frutas.puesto_frutas.fruta;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
-@DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class FrutaTest {
 
-	@Autowired
-	private TestEntityManager entityManager;
+	private static BigDecimal n(String valor) {
+		return new BigDecimal(valor);
+	}
 
 	@Test
-	void guardaYLeeUnaFruta() {
-		Fruta fruta = new Fruta();
-		fruta.setNombre("Manzana");
-		fruta.setPrecio(new BigDecimal("2500.50"));
-		fruta.setUnidad(Unidad.KG);
+	void unaFrutaNuevaEmpiezaSinStockYActiva() {
+		Fruta fruta = new Fruta("Manzana", n("2500"), Unidad.KG);
 
-		Long id = entityManager.persistAndGetId(fruta, Long.class);
-		entityManager.clear();
+		assertThat(fruta.getCantidad()).isEqualByComparingTo("0");
+		assertThat(fruta.isActiva()).isTrue();
+	}
 
-		Fruta guardada = entityManager.find(Fruta.class, id);
-		assertThat(guardada.getNombre()).isEqualTo("Manzana");
-		assertThat(guardada.getPrecio()).isEqualByComparingTo("2500.50");
-		assertThat(guardada.getCantidad()).isZero();
-		assertThat(guardada.getUnidad()).isEqualTo(Unidad.KG);
+	@Test
+	void quitaLosEspaciosDelNombre() {
+		Fruta fruta = new Fruta("  Manzana  ", n("2500"), Unidad.KG);
+
+		assertThat(fruta.getNombre()).isEqualTo("Manzana");
+	}
+
+	@Test
+	void rechazaNombreVacio() {
+		assertThatThrownBy(() -> new Fruta("   ", n("2500"), Unidad.KG))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	void aceptaPrecioCeroPeroNoNegativo() {
+		Fruta fruta = new Fruta("Manzana", n("0"), Unidad.KG);
+
+		assertThat(fruta.getPrecio()).isEqualByComparingTo("0");
+		assertThatThrownBy(() -> fruta.cambiarPrecio(n("-1")))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	void rechazaPrecioConMasDeDosDecimales() {
+		assertThatThrownBy(() -> new Fruta("Manzana", n("10.555"), Unidad.KG))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	void agregaYDescuentaStockConDecimalesEnKg() {
+		Fruta fruta = new Fruta("Manzana", n("2500"), Unidad.KG);
+
+		fruta.agregarStock(n("3"));
+		fruta.descontarStock(n("1.5"));
+
+		assertThat(fruta.getCantidad()).isEqualByComparingTo("1.5");
+	}
+
+	@Test
+	void noDejaElStockNegativo() {
+		Fruta fruta = new Fruta("Manzana", n("2500"), Unidad.KG);
+		fruta.agregarStock(n("1"));
+
+		assertThatThrownBy(() -> fruta.descontarStock(n("1.5")))
+				.isInstanceOf(StockInsuficienteException.class);
+		assertThat(fruta.getCantidad()).isEqualByComparingTo("1");
+	}
+
+	@Test
+	void rechazaCantidadesCeroONegativas() {
+		Fruta fruta = new Fruta("Manzana", n("2500"), Unidad.KG);
+
+		assertThatThrownBy(() -> fruta.agregarStock(n("0")))
+				.isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> fruta.descontarStock(n("-1")))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	void rechazaCantidadConMasDeTresDecimales() {
+		Fruta fruta = new Fruta("Manzana", n("2500"), Unidad.KG);
+
+		assertThatThrownBy(() -> fruta.agregarStock(n("1.0005")))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	void porUnidadSoloAdmiteCantidadesEnteras() {
+		Fruta fruta = new Fruta("Piña", n("4000"), Unidad.UNIDAD);
+
+		fruta.agregarStock(n("2.000"));
+
+		assertThat(fruta.getCantidad()).isEqualByComparingTo("2");
+		assertThatThrownBy(() -> fruta.agregarStock(n("0.5")))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	void permiteCambiarLaUnidadConStock() {
+		Fruta fruta = new Fruta("Piña", n("4000"), Unidad.UNIDAD);
+		fruta.agregarStock(n("3"));
+
+		fruta.cambiarUnidad(Unidad.KG);
+
+		assertThat(fruta.getUnidad()).isEqualTo(Unidad.KG);
+		assertThat(fruta.getCantidad()).isEqualByComparingTo("3");
+	}
+
+	@Test
+	void noPasaAUnidadConStockFraccionado() {
+		Fruta fruta = new Fruta("Manzana", n("2500"), Unidad.KG);
+		fruta.agregarStock(n("1.5"));
+
+		assertThatThrownBy(() -> fruta.cambiarUnidad(Unidad.UNIDAD))
+				.isInstanceOf(IllegalArgumentException.class);
+		assertThat(fruta.getUnidad()).isEqualTo(Unidad.KG);
+	}
+
+	@Test
+	void seDesactivaYSeReactiva() {
+		Fruta fruta = new Fruta("Manzana", n("2500"), Unidad.KG);
+
+		fruta.desactivar();
+		assertThat(fruta.isActiva()).isFalse();
+
+		fruta.activar();
+		assertThat(fruta.isActiva()).isTrue();
 	}
 
 }
