@@ -35,6 +35,15 @@ class FrutaTest {
 	}
 
 	@Test
+	void rechazaNombreDeMasDeCienCaracteres() {
+		Fruta fruta = new Fruta("a".repeat(100), n("2500"), Unidad.KG);
+
+		assertThat(fruta.getNombre()).hasSize(100);
+		assertThatThrownBy(() -> fruta.cambiarNombre("a".repeat(101)))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
 	void aceptaPrecioCeroPeroNoNegativo() {
 		Fruta fruta = new Fruta("Manzana", n("0"), Unidad.KG);
 

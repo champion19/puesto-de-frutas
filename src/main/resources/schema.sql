@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS fruta (
     cantidad  DECIMAL(10, 3) NOT NULL DEFAULT 0,
     unidad    VARCHAR(20)    NOT NULL,
     activa    BOOLEAN        NOT NULL DEFAULT TRUE,
+    version   BIGINT         NOT NULL DEFAULT 0,
     CONSTRAINT pk_fruta PRIMARY KEY (id),
     CONSTRAINT uk_fruta_nombre UNIQUE (nombre),
     CONSTRAINT ck_fruta_precio CHECK (precio >= 0),

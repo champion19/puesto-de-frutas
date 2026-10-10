@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,12 +30,13 @@ public class Fruta {
 
 	private static final int DECIMALES_PRECIO = 2;
 	private static final int DECIMALES_CANTIDAD = 3;
+	private static final int LARGO_NOMBRE = 100;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false, length = 100, unique = true)
+	@Column(nullable = false, length = LARGO_NOMBRE, unique = true)
 	private String nombre;
 
 	@Column(nullable = false, precision = 10, scale = 2)
@@ -52,6 +54,15 @@ public class Fruta {
 	@Column(nullable = false)
 	private boolean activa = true;
 
+	/**
+	 * Bloqueo optimista: Hibernate la sube en cada UPDATE y solo guarda si nadie
+	 * la cambió desde que se leyó la fruta. Si no, lanza un error en vez de pisar
+	 * el cambio del otro (p. ej. dos ventas a la vez).
+	 */
+	@Version
+	@Column(nullable = false)
+	private Long version;
+
 	public Fruta(String nombre, BigDecimal precio, Unidad unidad) {
 		cambiarNombre(nombre);
 		cambiarPrecio(precio);
@@ -62,7 +73,11 @@ public class Fruta {
 		if (nombre == null || nombre.isBlank()) {
 			throw new IllegalArgumentException("El nombre es obligatorio");
 		}
-		this.nombre = nombre.strip();
+		String limpio = nombre.strip();
+		if (limpio.length() > LARGO_NOMBRE) {
+			throw new IllegalArgumentException("El nombre admite máximo " + LARGO_NOMBRE + " caracteres");
+		}
+		this.nombre = limpio;
 	}
 
 	public void cambiarPrecio(BigDecimal precio) {

@@ -86,14 +86,15 @@ solo comprueba que las entidades coincidan con las tablas y nunca las modifica.
 
 Tabla `fruta`:
 
-| Columna    | Tipo            | Restricciones                                   |
-| ---------- | --------------- | ----------------------------------------------- |
-| `id`       | `BIGINT`        | Clave primaria, autoincremental                 |
-| `nombre`   | `VARCHAR(100)`  | Obligatorio, único                              |
-| `precio`   | `DECIMAL(10,2)` | Obligatorio, mayor o igual que 0                |
-| `cantidad` | `DECIMAL(10,3)` | Obligatorio, mayor o igual que 0, por defecto 0 |
-| `unidad`   | `VARCHAR(20)`   | Obligatorio: `UNIDAD` o `KG`                    |
-| `activa`   | `BOOLEAN`       | Obligatorio, por defecto `TRUE` (borrado lógico)|
+| Columna    | Tipo            | Restricciones                                    |
+| ---------- | --------------- | ------------------------------------------------ |
+| `id`       | `BIGINT`        | Clave primaria, autoincremental                  |
+| `nombre`   | `VARCHAR(100)`  | Obligatorio, único                               |
+| `precio`   | `DECIMAL(10,2)` | Obligatorio, mayor o igual que 0                 |
+| `cantidad` | `DECIMAL(10,3)` | Obligatorio, mayor o igual que 0, por defecto 0  |
+| `unidad`   | `VARCHAR(20)`   | Obligatorio: `UNIDAD` o `KG`                     |
+| `activa`   | `BOOLEAN`       | Obligatorio, por defecto `TRUE` (borrado lógico) |
+| `version`  | `BIGINT`        | Obligatorio, por defecto 0 (bloqueo optimista)   |
 
 > Como el script usa `IF NOT EXISTS`, los cambios en `schema.sql` no se aplican
 >
