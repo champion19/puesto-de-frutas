@@ -12,10 +12,10 @@ public interface SpringDataFruitRepository extends JpaRepository<Fruit, Long> {
 
 	List<Fruit> findByActiveTrueOrderByNameAsc();
 
+	List<Fruit> findAllByOrderByNameAsc();
+
 	Optional<Fruit> findByIdAndActiveTrue(Long id);
 
-	boolean existsByNameIgnoreCase(String name);
-
-	boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+	Optional<Fruit> findByNameIgnoreCase(String name);
 
 }

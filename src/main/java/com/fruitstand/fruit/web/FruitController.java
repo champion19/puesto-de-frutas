@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -29,14 +30,16 @@ public class FruitController {
 
 	private final FruitService service;
 
+	/** Catálogo (solo activas). Con ?includeInactive=true también las desactivadas. */
 	@GetMapping
-	public List<FruitResponse> list() {
-		return service.findAll().stream().map(FruitResponse::from).toList();
+	public List<FruitResponse> list(@RequestParam(defaultValue = "false") boolean includeInactive) {
+		return service.findAll(includeInactive).stream().map(FruitResponse::from).toList();
 	}
 
+	/** Una fruta desactivada responde 404, salvo con ?includeInactive=true (p. ej. para reactivarla). */
 	@GetMapping("/{id}")
-	public FruitResponse get(@PathVariable Long id) {
-		return FruitResponse.from(service.findById(id));
+	public FruitResponse get(@PathVariable Long id, @RequestParam(defaultValue = "false") boolean includeInactive) {
+		return FruitResponse.from(service.findById(id, includeInactive));
 	}
 
 	@PostMapping

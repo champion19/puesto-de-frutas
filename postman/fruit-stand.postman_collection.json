@@ -258,6 +258,98 @@
 					]
 				},
 				{
+					"name": "List fruits excludes deactivated",
+					"request": {
+						"method": "GET",
+						"url": "{{baseUrl}}/api/fruits"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('does not contain deactivated fruit', () => pm.expect(pm.response.json().map(f => f.id)).to.not.include(Number(pm.collectionVariables.get('fruitId'))));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List fruits including inactive",
+					"request": {
+						"method": "GET",
+						"url": "{{baseUrl}}/api/fruits?includeInactive=true"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const fruit = pm.response.json().find(f => f.id === Number(pm.collectionVariables.get('fruitId')));",
+									"pm.test('contains deactivated fruit', () => pm.expect(fruit).to.exist);",
+									"pm.test('marked as inactive', () => pm.expect(fruit.active).to.be.false);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get deactivated fruit including inactive",
+					"request": {
+						"method": "GET",
+						"url": "{{baseUrl}}/api/fruits/{{fruitId}}?includeInactive=true"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('marked as inactive', () => pm.expect(pm.response.json().active).to.be.false);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create with name of deactivated fruit",
+					"request": {
+						"method": "POST",
+						"url": "{{baseUrl}}/api/fruits",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{fruitName}}\",\n    \"price\": 1000,\n    \"unit\": \"KG\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 409', () => pm.response.to.have.status(409));",
+									"pm.test('says the fruit is inactive', () => pm.expect(pm.response.json().detail).to.include('inactive'));",
+									"pm.test('points to the fruit to reactivate', () => {",
+									"    pm.expect(pm.response.json().existingId).to.eql(Number(pm.collectionVariables.get('fruitId')));",
+									"    pm.expect(pm.response.json().existingActive).to.be.false;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
 					"name": "Activate fruit",
 					"request": {
 						"method": "POST",
@@ -312,7 +404,11 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test('status 409', () => pm.response.to.have.status(409));"
+									"pm.test('status 409', () => pm.response.to.have.status(409));",
+									"pm.test('points to the existing active fruit', () => {",
+									"    pm.expect(pm.response.json().existingId).to.eql(Number(pm.collectionVariables.get('fruitId')));",
+									"    pm.expect(pm.response.json().existingActive).to.be.true;",
+									"});"
 								]
 							}
 						}
@@ -613,6 +709,24 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List with non-boolean includeInactive",
+					"request": {
+						"method": "GET",
+						"url": "{{baseUrl}}/api/fruits?includeInactive=maybe"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
 								]
 							}
 						}

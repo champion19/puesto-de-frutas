@@ -42,6 +42,17 @@ class JpaFruitRepositoryTest {
 	}
 
 	@Test
+	void findAllIncludesDeactivatedFruitsOrderedByName() {
+		save("Pear", true);
+		save("Banana", false);
+		save("Apple", true);
+
+		assertThat(repository.findAll())
+				.extracting(Fruit::getName)
+				.containsExactly("Apple", "Banana", "Pear");
+	}
+
+	@Test
 	void doesNotFindDeactivatedFruitById() {
 		Long active = save("Pear", true).getId();
 		Long inactive = save("Banana", false).getId();
@@ -55,18 +66,9 @@ class JpaFruitRepositoryTest {
 		save("Apple", true);
 		save("Banana", false);
 
-		assertThat(repository.existsByName("APPLE")).isTrue();
-		assertThat(repository.existsByName("banana")).isTrue();
-		assertThat(repository.existsByName("Pear")).isFalse();
-	}
-
-	@Test
-	void whenEditingIgnoresTheSameFruitsName() {
-		Long apple = save("Apple", true).getId();
-		Long pear = save("Pear", true).getId();
-
-		assertThat(repository.existsByNameExcludingId("apple", apple)).isFalse();
-		assertThat(repository.existsByNameExcludingId("apple", pear)).isTrue();
+		assertThat(repository.findByName("APPLE")).map(Fruit::getName).contains("Apple");
+		assertThat(repository.findByName("banana")).map(Fruit::isActive).contains(false);
+		assertThat(repository.findByName("Pear")).isEmpty();
 	}
 
 }

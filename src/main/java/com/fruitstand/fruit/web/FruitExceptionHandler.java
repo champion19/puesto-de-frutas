@@ -41,7 +41,10 @@ public class FruitExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(DuplicateNameException.class)
 	public ProblemDetail duplicateName(DuplicateNameException e) {
-		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+		problem.setProperty("existingId", e.getExistingId());
+		problem.setProperty("existingActive", e.isExistingActive());
+		return problem;
 	}
 
 	/** Respaldo si dos pedidos crean el mismo nombre a la vez y salta uk_fruit_name. */

@@ -43,12 +43,40 @@ class FruitControllerTest {
 
 	@Test
 	void listsFruits() throws Exception {
-		when(service.findAll()).thenReturn(List.of(apple()));
+		when(service.findAll(false)).thenReturn(List.of(apple()));
 
 		mvc.perform(get("/api/fruits"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$[0].name").value("Apple"))
 				.andExpect(jsonPath("$[0].unit").value("KG"));
+	}
+
+	@Test
+	void listsInactiveFruitsWhenRequested() throws Exception {
+		Fruit inactive = apple();
+		inactive.deactivate();
+		when(service.findAll(true)).thenReturn(List.of(inactive));
+
+		mvc.perform(get("/api/fruits").param("includeInactive", "true"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].active").value(false));
+	}
+
+	@Test
+	void getsInactiveFruitWhenRequested() throws Exception {
+		Fruit inactive = apple();
+		inactive.deactivate();
+		when(service.findById(1L, true)).thenReturn(inactive);
+
+		mvc.perform(get("/api/fruits/1").param("includeInactive", "true"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.active").value(false));
+	}
+
+	@Test
+	void rejectsNonBooleanIncludeInactive() throws Exception {
+		mvc.perform(get("/api/fruits").param("includeInactive", "maybe"))
+				.andExpect(status().isBadRequest());
 	}
 
 	@Test
@@ -106,7 +134,7 @@ class FruitControllerTest {
 
 	@Test
 	void returns404WhenFruitDoesNotExist() throws Exception {
-		when(service.findById(9L)).thenThrow(new FruitNotFoundException(9L));
+		when(service.findById(9L, false)).thenThrow(new FruitNotFoundException(9L));
 
 		mvc.perform(get("/api/fruits/9"))
 				.andExpect(status().isNotFound())
@@ -115,13 +143,17 @@ class FruitControllerTest {
 
 	@Test
 	void returns409WhenNameIsDuplicate() throws Exception {
-		when(service.create(any(), any(), any())).thenThrow(new DuplicateNameException("Apple"));
+		Fruit inactive = apple();
+		inactive.deactivate();
+		when(service.create(any(), any(), any())).thenThrow(new DuplicateNameException(inactive));
 
 		mvc.perform(post("/api/fruits").contentType(MediaType.APPLICATION_JSON)
 				.content("""
 						{"name": "Apple", "price": 2500, "unit": "KG"}
 						"""))
-				.andExpect(status().isConflict());
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.existingActive").value(false))
+				.andExpect(jsonPath("$.existingId").hasJsonPath());
 	}
 
 	@Test

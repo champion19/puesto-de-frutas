@@ -23,6 +23,11 @@ public class JpaFruitRepository implements FruitRepository {
 	}
 
 	@Override
+	public List<Fruit> findAll() {
+		return jpa.findAllByOrderByNameAsc();
+	}
+
+	@Override
 	public Optional<Fruit> findActiveById(Long id) {
 		return jpa.findByIdAndActiveTrue(id);
 	}
@@ -33,13 +38,8 @@ public class JpaFruitRepository implements FruitRepository {
 	}
 
 	@Override
-	public boolean existsByName(String name) {
-		return jpa.existsByNameIgnoreCase(name);
-	}
-
-	@Override
-	public boolean existsByNameExcludingId(String name, Long id) {
-		return jpa.existsByNameIgnoreCaseAndIdNot(name, id);
+	public Optional<Fruit> findByName(String name) {
+		return jpa.findByNameIgnoreCase(name);
 	}
 
 	@Override
