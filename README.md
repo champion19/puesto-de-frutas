@@ -21,11 +21,15 @@ API REST para gestionar el inventario de un puesto de frutas (CRUD de frutas).
 ### 1. Variables de entorno
 
 ```bash
-cp .env.example .env
+cp .env.example .env          # Windows (cmd): copy .env.example .env
 ```
 
 Edita `.env` y define al menos `DB_PASSWORD`. El archivo `.env` es local y no se
 sube al repositorio; `.env.example` es la plantilla.
+
+Lo leen tanto Docker Compose (para crear MySQL) como Spring Boot (para
+conectarse), así que basta con configurarlo una vez. Si una variable también
+está definida en el sistema, gana la del sistema.
 
 | Variable      | Descripción         | Valor por defecto |
 | ------------- | ------------------- | ----------------- |
@@ -37,7 +41,7 @@ sube al repositorio; `.env.example` es la plantilla.
 
 > Si el puerto 3306 ya está ocupado (por ejemplo, por otro MySQL), cambia
 >
-> mismo valor.
+> puerto y la aplicación se conectará a él, porque ambos leen el mismo valor.
 
 ### 2. Levantar MySQL con Docker
 
@@ -57,24 +61,40 @@ y ajusta las variables de `.env` a tu instalación.
 
 ### 3. Ejecutar la aplicación
 
-Spring Boot no lee el archivo `.env` por sí solo; hay que exportar las
-variables en la terminal antes de arrancar:
+Desde la raíz del proyecto (ahí es donde la aplicación busca el `.env`):
 
 ```bash
-set -a; source .env; set +a
-./mvnw spring-boot:run
+./mvnw spring-boot:run        # Windows (cmd): mvnw.cmd spring-boot:run
 ```
 
-En Windows (cmd), define cada variable y arranca con el wrapper:
+No hace falta exportar variables: la aplicación carga el `.env` sola
+(`spring.config.import` en `application.properties`).
 
-```bat
-set DB_PORT=3306
-set DB_PASSWORD=tu_clave
-mvnw.cmd spring-boot:run
+La API queda en `http://localhost:8080/api/fruits`. Al arrancar, la aplicación
+ejecuta `schema.sql` y crea la tabla `fruit` si no existe.
+
+### 4. Probar con Postman
+
+En `postman/` están la colección (`fruit-stand.postman_collection.json`) y el
+entorno local (`fruit-stand.local.postman_environment.json`, con
+`baseUrl=http://localhost:8080`). Se pueden importar en Postman o correr desde
+la terminal con la aplicación levantada:
+
+```bash
+postman collection run postman/fruit-stand.postman_collection.json \
+  -e postman/fruit-stand.local.postman_environment.json
 ```
 
-Al arrancar, la aplicación ejecuta `schema.sql` y crea la tabla `fruta` si no
-existe.
+La colección recorre el CRUD completo y los casos de error, y se puede correr
+varias veces sobre la misma base.
+
+### Si no arranca
+
+| Síntoma                         | Causa y solución                                                                                                                                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Communications link failure`   | MySQL no está corriendo (abrir Docker Desktop y `docker compose up -d`), o la aplicación no encontró el `.env` (no existe o se arrancó fuera de la raíz del proyecto) y está usando el puerto por defecto `3306`. |
+| `Access denied for user 'root'` | `DB_PASSWORD` no coincide con la del contenedor (ver la nota de la sección Esquema).                                                                                                                              |
+| `Port 8080 was already in use`  | Otra aplicación usa el puerto: cerrarla o arrancar con `--server.port=8081`.                                                                                                                                      |
 
 ## Base de datos
 
@@ -84,21 +104,25 @@ El esquema está en `src/main/resources/schema.sql` y se ejecuta en cada
 arranque (`CREATE TABLE IF NOT EXISTS`). Hibernate está en modo `validate`:
 solo comprueba que las entidades coincidan con las tablas y nunca las modifica.
 
-Tabla `fruta`:
+Tabla `fruit`:
 
 | Columna    | Tipo            | Restricciones                                    |
 | ---------- | --------------- | ------------------------------------------------ |
 | `id`       | `BIGINT`        | Clave primaria, autoincremental                  |
-| `nombre`   | `VARCHAR(100)`  | Obligatorio, único                               |
-| `precio`   | `DECIMAL(10,2)` | Obligatorio, mayor o igual que 0                 |
-| `cantidad` | `DECIMAL(10,3)` | Obligatorio, mayor o igual que 0, por defecto 0  |
-| `unidad`   | `VARCHAR(20)`   | Obligatorio: `UNIDAD` o `KG`                     |
-| `activa`   | `BOOLEAN`       | Obligatorio, por defecto `TRUE` (borrado lógico) |
+| `name`     | `VARCHAR(100)`  | Obligatorio, único                               |
+| `price`    | `DECIMAL(10,2)` | Obligatorio, mayor o igual que 0                 |
+| `quantity` | `DECIMAL(10,3)` | Obligatorio, mayor o igual que 0, por defecto 0  |
+| `unit`     | `VARCHAR(20)`   | Obligatorio: `PIECE` o `KG`                      |
+| `active`   | `BOOLEAN`       | Obligatorio, por defecto `TRUE` (borrado lógico) |
 | `version`  | `BIGINT`        | Obligatorio, por defecto 0 (bloqueo optimista)   |
 
 > Como el script usa `IF NOT EXISTS`, los cambios en `schema.sql` no se aplican
 >
 > `docker compose down -v`) para que se vuelva a crear.
+>
+> Lo mismo pasa con la contraseña: MySQL toma `DB_PASSWORD` solo la primera vez
+>
+> volumen con `docker compose down -v` (borra los datos).
 
 ### Conexión con un cliente (DBeaver)
 
@@ -110,7 +134,7 @@ Tabla `fruta`:
 
    `useSSL=false` (si no, MySQL 8 responde "Public Key Retrieval is not allowed").
 
-La tabla `fruta` aparece después de arrancar la aplicación por primera vez.
+La tabla `fruit` aparece después de arrancar la aplicación por primera vez.
 
 ### Consola de MySQL
 
