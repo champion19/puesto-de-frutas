@@ -1,10 +1,10 @@
-package com.puesto_frutas.puesto_frutas;
+package com.fruitstand;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class PuestoFrutasApplicationTests {
+class FruitStandApplicationTests {
 
 	@Test
 	void contextLoads() {
