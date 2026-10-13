@@ -350,6 +350,34 @@
 					]
 				},
 				{
+					"name": "Update deactivated fruit",
+					"request": {
+						"method": "PUT",
+						"url": "{{baseUrl}}/api/fruits/{{fruitId}}",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{fruitName}}\",\n    \"price\": 3000.50,\n    \"unit\": \"KG\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
 					"name": "Activate fruit",
 					"request": {
 						"method": "POST",
@@ -727,6 +755,201 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update with name of another fruit",
+					"request": {
+						"method": "PUT",
+						"url": "{{baseUrl}}/api/fruits/{{pieceFruitId}}",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{fruitName}}\",\n    \"price\": 4000,\n    \"unit\": \"PIECE\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 409', () => pm.response.to.have.status(409));",
+									"pm.test('points to the fruit that has the name', () => {",
+									"    pm.expect(pm.response.json().existingId).to.eql(Number(pm.collectionVariables.get('fruitId')));",
+									"    pm.expect(pm.response.json().existingActive).to.be.true;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update non-existent fruit",
+					"request": {
+						"method": "PUT",
+						"url": "{{baseUrl}}/api/fruits/999999",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Ghost\",\n    \"price\": 1000,\n    \"unit\": \"KG\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));",
+									"pm.test('detail', () => pm.expect(pm.response.json().detail).to.include('999999'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update with missing fields",
+					"request": {
+						"method": "PUT",
+						"url": "{{baseUrl}}/api/fruits/{{fruitId}}",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));",
+									"pm.test('errors in name, price and unit', () => pm.expect(pm.response.json().errors).to.have.all.keys('name', 'price', 'unit'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update with negative price",
+					"request": {
+						"method": "PUT",
+						"url": "{{baseUrl}}/api/fruits/{{fruitId}}",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{fruitName}}\",\n    \"price\": -1,\n    \"unit\": \"KG\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));",
+									"pm.test('detail', () => pm.expect(pm.response.json().detail).to.include('Price'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Switch to PIECE with fractional stock",
+					"request": {
+						"method": "PUT",
+						"url": "{{baseUrl}}/api/fruits/{{fruitId}}",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{fruitName}}\",\n    \"price\": 3000.50,\n    \"unit\": \"PIECE\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));",
+									"pm.test('detail', () => pm.expect(pm.response.json().detail).to.include('fractional stock'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update with non-numeric id",
+					"request": {
+						"method": "PUT",
+						"url": "{{baseUrl}}/api/fruits/abc",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{fruitName}}\",\n    \"price\": 3000.50,\n    \"unit\": \"KG\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Activate non-existent fruit",
+					"request": {
+						"method": "POST",
+						"url": "{{baseUrl}}/api/fruits/999999/activate"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));",
+									"pm.test('detail', () => pm.expect(pm.response.json().detail).to.include('999999'));"
 								]
 							}
 						}
