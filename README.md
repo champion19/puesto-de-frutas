@@ -4,7 +4,7 @@ API REST para gestionar el inventario de un puesto de frutas (CRUD de frutas).
 
 ## Tecnologías
 
-- Java 17
+- Java 25 (latest LTS)
 - Spring Boot 4 (Spring Web MVC, Spring Data JPA, Validation)
 - MySQL 8.4 (con Docker)
 - H2 en memoria (solo para los tests)
@@ -12,7 +12,7 @@ API REST para gestionar el inventario de un puesto de frutas (CRUD de frutas).
 
 ## Requisitos
 
-- JDK 17 o superior
+- JDK 25 o superior
 - Docker Desktop (o un MySQL 8 instalado localmente)
 - Opcional: un cliente de base de datos como DBeaver
 
