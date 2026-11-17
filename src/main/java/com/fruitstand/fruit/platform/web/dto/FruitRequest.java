@@ -1,4 +1,4 @@
-package com.fruitstand.fruit.web.dto;
+package com.fruitstand.fruit.platform.web.dto;
 
 import java.math.BigDecimal;
 

@@ -29,8 +29,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.fruitstand.fruit.domain.Fruit;
 import com.fruitstand.fruit.domain.FruitRepository;
 import com.fruitstand.fruit.domain.Unit;
-import com.fruitstand.fruit.infrastructure.persistence.JpaFruitRepository;
-import com.fruitstand.fruit.infrastructure.persistence.SpringDataFruitRepository;
+import com.fruitstand.fruit.platform.config.ResilienceConfig;
+import com.fruitstand.fruit.platform.persistence.FruitEntity;
+import com.fruitstand.fruit.platform.persistence.JpaFruitRepository;
+import com.fruitstand.fruit.platform.persistence.SpringDataFruitRepository;
 
 /**
  * Sin la transacción del test: cada llamada al service o al repository confirma
@@ -39,7 +41,7 @@ import com.fruitstand.fruit.infrastructure.persistence.SpringDataFruitRepository
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import({ FruitService.class, JpaFruitRepository.class })
+@Import({ FruitService.class, JpaFruitRepository.class, ResilienceConfig.class }) // ResilienceConfig: activa @Retryable
 class FruitConcurrencyTest {
 
 	@Autowired
@@ -63,7 +65,7 @@ class FruitConcurrencyTest {
 
 	@Test
 	void everyChangeIncrementsTheVersion() {
-		Long id = jpa.save(new Fruit("Apple", new BigDecimal("1000"), Unit.KG)).getId();
+		Long id = jpa.save(FruitEntity.from(new Fruit("Apple", new BigDecimal("1000"), Unit.KG))).getId();
 		assertThat(jpa.findById(id).orElseThrow().getVersion()).isZero();
 
 		service.addStock(id, new BigDecimal("5"));
@@ -73,16 +75,16 @@ class FruitConcurrencyTest {
 
 	@Test
 	void saleWithStaleDataDoesNotOverwriteTheOther() {
-		Long id = jpa.save(new Fruit("Apple", new BigDecimal("1000"), Unit.KG)).getId();
+		Long id = jpa.save(FruitEntity.from(new Fruit("Apple", new BigDecimal("1000"), Unit.KG))).getId();
 		service.addStock(id, new BigDecimal("10"));
 
 		// Caja 1 lee la fruta (stock 10) y, antes de guardar, la caja 2 vende 4
-		Fruit readByRegister1 = jpa.findById(id).orElseThrow();
+		Fruit readByRegister1 = repository.findActiveById(id).orElseThrow();
 		service.removeStock(id, new BigDecimal("4"));
 
-		// Caja 1 vende 3 sobre su copia vieja: sin @Version dejaría 7 y se perdería la venta de 4
+		// Caja 1 vende 3 sobre su copia vieja: sin la versión dejaría 7 y se perdería la venta de 4
 		readByRegister1.removeStock(new BigDecimal("3"));
-		assertThatThrownBy(() -> jpa.save(readByRegister1))
+		assertThatThrownBy(() -> repository.save(readByRegister1))
 				.isInstanceOf(ObjectOptimisticLockingFailureException.class);
 
 		assertThat(jpa.findById(id).orElseThrow().getQuantity()).isEqualByComparingTo("6");
@@ -90,7 +92,7 @@ class FruitConcurrencyTest {
 
 	@Test
 	void conflictingSaleIsRetriedAndNoSaleIsLost() {
-		Long id = jpa.save(new Fruit("Apple", new BigDecimal("1000"), Unit.KG)).getId();
+		Long id = jpa.save(FruitEntity.from(new Fruit("Apple", new BigDecimal("1000"), Unit.KG))).getId();
 		service.addStock(id, new BigDecimal("10"));
 		clearInvocations(repository); // contar solo las lecturas de la venta
 
@@ -100,7 +102,7 @@ class FruitConcurrencyTest {
 		AtomicBoolean firstRead = new AtomicBoolean(true);
 		doAnswer(invocation -> {
 			// Se lee con Spring Data directo para no volver a pasar por el spy
-			Optional<Fruit> read = jpa.findById(id).filter(Fruit::isActive);
+			Optional<Fruit> read = jpa.findById(id).filter(FruitEntity::isActive).map(FruitEntity::toDomain);
 			if (firstRead.getAndSet(false)) {
 				// La caja 1 ya leyó (stock 10); antes de que guarde, la caja 2 vende 4
 				otherRequest.executeWithoutResult(status -> service.removeStock(id, new BigDecimal("4")));

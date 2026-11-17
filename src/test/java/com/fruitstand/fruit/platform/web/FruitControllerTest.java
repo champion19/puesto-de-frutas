@@ -1,4 +1,4 @@
-package com.fruitstand.fruit.web;
+package com.fruitstand.fruit.platform.web;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,6 +27,7 @@ import com.fruitstand.fruit.domain.Unit;
 import com.fruitstand.fruit.domain.exception.DuplicateNameException;
 import com.fruitstand.fruit.domain.exception.FruitNotFoundException;
 import com.fruitstand.fruit.domain.exception.InsufficientStockException;
+import com.fruitstand.fruit.domain.exception.InvalidFruitException;
 
 @WebMvcTest(FruitController.class)
 class FruitControllerTest {
@@ -154,6 +155,18 @@ class FruitControllerTest {
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.existingActive").value(false))
 				.andExpect(jsonPath("$.existingId").hasJsonPath());
+	}
+
+	@Test
+	void returns400WhenAFruitRuleIsBroken() throws Exception {
+		when(service.addStock(eq(1L), any())).thenThrow(new InvalidFruitException("Quantity must be greater than 0"));
+
+		mvc.perform(post("/api/fruits/1/stock/add").contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"quantity": -1}
+						"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value("Quantity must be greater than 0"));
 	}
 
 	@Test

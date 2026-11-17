@@ -16,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fruitstand.fruit.domain.Fruit;
 import com.fruitstand.fruit.domain.FruitRepository;
@@ -41,15 +40,19 @@ class FruitServiceTest {
 		return new Fruit("Apple", n("2500"), Unit.KG);
 	}
 
-	/** El id lo pone la base al guardar; en un test unitario se asigna a mano. */
+	/** El id lo pone la base al guardar; en un test unitario se usa restore. */
 	private static Fruit fruitWithId(Long id, String name) {
-		Fruit fruit = new Fruit(name, n("2500"), Unit.KG);
-		ReflectionTestUtils.setField(fruit, "id", id);
-		return fruit;
+		return Fruit.restore(id, name, n("2500"), BigDecimal.ZERO, Unit.KG, true, 0L);
+	}
+
+	/** El repositorio de mentira devuelve la misma fruta que recibe al guardar. */
+	private void saveReturnsTheSameFruit() {
+		when(repository.save(any(Fruit.class))).thenAnswer(invocation -> invocation.getArgument(0));
 	}
 
 	@Test
 	void updateKeepingItsOwnNameIsNotADuplicate() {
+		saveReturnsTheSameFruit();
 		Fruit apple = fruitWithId(1L, "Apple");
 		when(repository.findActiveById(1L)).thenReturn(Optional.of(apple));
 		when(repository.findByName("apple")).thenReturn(Optional.of(apple));
@@ -62,7 +65,7 @@ class FruitServiceTest {
 	@Test
 	void createsFruitWithNewName() {
 		when(repository.findByName("Apple")).thenReturn(Optional.empty());
-		when(repository.save(any(Fruit.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		saveReturnsTheSameFruit();
 
 		Fruit created = service.create("  Apple ", n("2500"), Unit.KG);
 
@@ -124,11 +127,13 @@ class FruitServiceTest {
 
 	@Test
 	void updatesFruitData() {
+		saveReturnsTheSameFruit();
 		when(repository.findActiveById(1L)).thenReturn(Optional.of(apple()));
 		when(repository.findByName("Red apple")).thenReturn(Optional.empty());
 
 		Fruit updated = service.update(1L, "Red apple", n("3000"), Unit.PIECE);
 
+		verify(repository).save(updated);
 		assertThat(updated.getName()).isEqualTo("Red apple");
 		assertThat(updated.getPrice()).isEqualByComparingTo("3000");
 		assertThat(updated.getUnit()).isEqualTo(Unit.PIECE);
@@ -145,6 +150,7 @@ class FruitServiceTest {
 
 	@Test
 	void movesFruitStock() {
+		saveReturnsTheSameFruit();
 		when(repository.findActiveById(1L)).thenReturn(Optional.of(apple()));
 
 		service.addStock(1L, n("3"));
@@ -155,6 +161,7 @@ class FruitServiceTest {
 
 	@Test
 	void deactivatesAndReactivatesFruit() {
+		saveReturnsTheSameFruit();
 		Fruit fruit = apple();
 		when(repository.findActiveById(1L)).thenReturn(Optional.of(fruit));
 		when(repository.findById(1L)).thenReturn(Optional.of(fruit));

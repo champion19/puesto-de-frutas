@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 import com.fruitstand.fruit.domain.exception.InsufficientStockException;
+import com.fruitstand.fruit.domain.exception.InvalidFruitException;
 
 class FruitTest {
 
@@ -33,7 +34,7 @@ class FruitTest {
 	@Test
 	void rejectsBlankName() {
 		assertThatThrownBy(() -> new Fruit("   ", n("2500"), Unit.KG))
-				.isInstanceOf(IllegalArgumentException.class);
+				.isInstanceOf(InvalidFruitException.class);
 	}
 
 	@Test
@@ -42,7 +43,7 @@ class FruitTest {
 
 		assertThat(fruit.getName()).hasSize(100);
 		assertThatThrownBy(() -> fruit.changeName("a".repeat(101)))
-				.isInstanceOf(IllegalArgumentException.class);
+				.isInstanceOf(InvalidFruitException.class);
 	}
 
 	@Test
@@ -51,13 +52,13 @@ class FruitTest {
 
 		assertThat(fruit.getPrice()).isEqualByComparingTo("0");
 		assertThatThrownBy(() -> fruit.changePrice(n("-1")))
-				.isInstanceOf(IllegalArgumentException.class);
+				.isInstanceOf(InvalidFruitException.class);
 	}
 
 	@Test
 	void rejectsPriceWithMoreThanTwoDecimals() {
 		assertThatThrownBy(() -> new Fruit("Apple", n("10.555"), Unit.KG))
-				.isInstanceOf(IllegalArgumentException.class);
+				.isInstanceOf(InvalidFruitException.class);
 	}
 
 	@Test
@@ -85,9 +86,9 @@ class FruitTest {
 		Fruit fruit = new Fruit("Apple", n("2500"), Unit.KG);
 
 		assertThatThrownBy(() -> fruit.addStock(n("0")))
-				.isInstanceOf(IllegalArgumentException.class);
+				.isInstanceOf(InvalidFruitException.class);
 		assertThatThrownBy(() -> fruit.removeStock(n("-1")))
-				.isInstanceOf(IllegalArgumentException.class);
+				.isInstanceOf(InvalidFruitException.class);
 	}
 
 	@Test
@@ -95,7 +96,7 @@ class FruitTest {
 		Fruit fruit = new Fruit("Apple", n("2500"), Unit.KG);
 
 		assertThatThrownBy(() -> fruit.addStock(n("1.0005")))
-				.isInstanceOf(IllegalArgumentException.class);
+				.isInstanceOf(InvalidFruitException.class);
 	}
 
 	@Test
@@ -106,7 +107,7 @@ class FruitTest {
 
 		assertThat(fruit.getQuantity()).isEqualByComparingTo("2");
 		assertThatThrownBy(() -> fruit.addStock(n("0.5")))
-				.isInstanceOf(IllegalArgumentException.class);
+				.isInstanceOf(InvalidFruitException.class);
 	}
 
 	@Test
@@ -126,8 +127,18 @@ class FruitTest {
 		fruit.addStock(n("1.5"));
 
 		assertThatThrownBy(() -> fruit.changeUnit(Unit.PIECE))
-				.isInstanceOf(IllegalArgumentException.class);
+				.isInstanceOf(InvalidFruitException.class);
 		assertThat(fruit.getUnit()).isEqualTo(Unit.KG);
+	}
+
+	@Test
+	void restoresSavedFruitWithoutTouchingItsData() {
+		Fruit fruit = Fruit.restore(7L, "Apple", n("2500"), n("1.5"), Unit.KG, false, 3L);
+
+		assertThat(fruit.getId()).isEqualTo(7L);
+		assertThat(fruit.getQuantity()).isEqualByComparingTo("1.5");
+		assertThat(fruit.isActive()).isFalse();
+		assertThat(fruit.getVersion()).isEqualTo(3L);
 	}
 
 	@Test

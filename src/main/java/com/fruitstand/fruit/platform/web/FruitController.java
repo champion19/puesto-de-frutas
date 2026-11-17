@@ -1,4 +1,4 @@
-package com.fruitstand.fruit.web;
+package com.fruitstand.fruit.platform.web;
 
 import java.net.URI;
 import java.util.List;
@@ -19,9 +19,9 @@ import lombok.RequiredArgsConstructor;
 
 import com.fruitstand.fruit.application.FruitService;
 import com.fruitstand.fruit.domain.Fruit;
-import com.fruitstand.fruit.web.dto.FruitRequest;
-import com.fruitstand.fruit.web.dto.FruitResponse;
-import com.fruitstand.fruit.web.dto.StockRequest;
+import com.fruitstand.fruit.platform.web.dto.FruitRequest;
+import com.fruitstand.fruit.platform.web.dto.FruitResponse;
+import com.fruitstand.fruit.platform.web.dto.StockRequest;
 
 @RestController
 @RequestMapping("/api/fruits")

@@ -1,4 +1,4 @@
-package com.fruitstand.fruit.infrastructure.persistence;
+package com.fruitstand.fruit.platform.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

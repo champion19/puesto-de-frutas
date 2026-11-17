@@ -1,4 +1,4 @@
-package com.fruitstand.fruit.web;
+package com.fruitstand.fruit.platform.web;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -26,6 +26,7 @@ import tools.jackson.databind.exc.MismatchedInputException;
 import com.fruitstand.fruit.domain.exception.DuplicateNameException;
 import com.fruitstand.fruit.domain.exception.FruitNotFoundException;
 import com.fruitstand.fruit.domain.exception.InsufficientStockException;
+import com.fruitstand.fruit.domain.exception.InvalidFruitException;
 
 /**
  * Traduce las excepciones a respuestas HTTP con formato ProblemDetail (RFC 9457).
@@ -61,7 +62,7 @@ public class FruitExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	/** Reglas de la entidad: precio negativo, demasiados decimales, stock insuficiente... */
-	@ExceptionHandler({ IllegalArgumentException.class, InsufficientStockException.class })
+	@ExceptionHandler({ InvalidFruitException.class, InsufficientStockException.class })
 	public ProblemDetail businessRule(RuntimeException e) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
 	}

@@ -5,7 +5,7 @@ import java.util.Optional;
 
 /**
  * Puerto: lo que el dominio necesita para guardar y buscar frutas. No sabe
- * nada de JPA; la implementación vive en infrastructure.persistence.
+ * nada de JPA; la implementación vive en platform.persistence.
  */
 public interface FruitRepository {
 

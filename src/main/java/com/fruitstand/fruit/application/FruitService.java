@@ -18,9 +18,9 @@ import com.fruitstand.fruit.domain.exception.DuplicateNameException;
 import com.fruitstand.fruit.domain.exception.FruitNotFoundException;
 
 /**
- * Las reglas de cada fruta viven en la entidad; aquí solo se busca, se valida
- * lo que depende de otras frutas (nombre único) y se guarda.
- * Los cambios sobre una fruta ya cargada se guardan solos al cerrar la transacción.
+ * Casos de uso de la fruta. Las reglas de UNA fruta viven en el dominio (Fruit);
+ * aquí se busca, se valida lo que depende de otras frutas (nombre único) y se
+ * guarda siempre con repository.save(...): no depende de ningún truco de JPA.
  *
  * Si otra petición cambió la misma fruta a la vez (@Version), se reintenta el
  * método completo: transacción nueva, lectura fresca y la operación otra vez.
@@ -64,9 +64,7 @@ public class FruitService {
 
 	public Fruit update(Long id, String name, BigDecimal price, Unit unit) {
 		Fruit fruit = findById(id);
-		// El nombre puede repetirse solo si es el de la misma fruta. Se revisa antes
-		// de cambiar la entidad: la consulta haría flush del nombre nuevo y la base
-		// respondería con uk_fruit_name en vez de este error.
+		// El nombre puede repetirse solo si es el de la misma fruta.
 		if (name != null) {
 			repository.findByName(name.strip())
 					.filter(existing -> !existing.getId().equals(id))
@@ -77,30 +75,32 @@ public class FruitService {
 		fruit.changeName(name);
 		fruit.changePrice(price);
 		fruit.changeUnit(unit);
-		return fruit;
+		return repository.save(fruit);
 	}
 
 	public Fruit addStock(Long id, BigDecimal quantity) {
 		Fruit fruit = findById(id);
 		fruit.addStock(quantity);
-		return fruit;
+		return repository.save(fruit);
 	}
 
 	public Fruit removeStock(Long id, BigDecimal quantity) {
 		Fruit fruit = findById(id);
 		fruit.removeStock(quantity);
-		return fruit;
+		return repository.save(fruit);
 	}
 
 	public void deactivate(Long id) {
-		findById(id).deactivate();
+		Fruit fruit = findById(id);
+		fruit.deactivate();
+		repository.save(fruit);
 	}
 
 	/** Incluye las inactivas porque la fruta a reactivar lo está. */
 	public Fruit activate(Long id) {
 		Fruit fruit = findById(id, true);
 		fruit.activate();
-		return fruit;
+		return repository.save(fruit);
 	}
 
 }

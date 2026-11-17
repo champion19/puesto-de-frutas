@@ -1,4 +1,4 @@
-package com.fruitstand.fruit.infrastructure.persistence;
+package com.fruitstand.fruit.platform.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,15 +25,16 @@ class FruitPersistenceTest {
 		Fruit fruit = new Fruit("Apple", new BigDecimal("2500.50"), Unit.KG);
 		fruit.addStock(new BigDecimal("1.5"));
 
-		Long id = entityManager.persistAndGetId(fruit, Long.class);
+		Long id = entityManager.persistAndGetId(FruitEntity.from(fruit), Long.class);
 		entityManager.clear();
 
-		Fruit saved = entityManager.find(Fruit.class, id);
+		Fruit saved = entityManager.find(FruitEntity.class, id).toDomain();
 		assertThat(saved.getName()).isEqualTo("Apple");
 		assertThat(saved.getPrice()).isEqualByComparingTo("2500.50");
 		assertThat(saved.getQuantity()).isEqualByComparingTo("1.5");
 		assertThat(saved.getUnit()).isEqualTo(Unit.KG);
 		assertThat(saved.isActive()).isTrue();
+		assertThat(saved.getVersion()).isZero();
 	}
 
 }

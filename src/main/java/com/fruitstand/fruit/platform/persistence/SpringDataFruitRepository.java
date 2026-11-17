@@ -1,21 +1,19 @@
-package com.fruitstand.fruit.infrastructure.persistence;
+package com.fruitstand.fruit.platform.persistence;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.fruitstand.fruit.domain.Fruit;
-
 /** Spring Data genera las consultas a partir del nombre de cada método. */
-public interface SpringDataFruitRepository extends JpaRepository<Fruit, Long> {
+public interface SpringDataFruitRepository extends JpaRepository<FruitEntity, Long> {
 
-	List<Fruit> findByActiveTrueOrderByNameAsc();
+	List<FruitEntity> findByActiveTrueOrderByNameAsc();
 
-	List<Fruit> findAllByOrderByNameAsc();
+	List<FruitEntity> findAllByOrderByNameAsc();
 
-	Optional<Fruit> findByIdAndActiveTrue(Long id);
+	Optional<FruitEntity> findByIdAndActiveTrue(Long id);
 
-	Optional<Fruit> findByNameIgnoreCase(String name);
+	Optional<FruitEntity> findByNameIgnoreCase(String name);
 
 }

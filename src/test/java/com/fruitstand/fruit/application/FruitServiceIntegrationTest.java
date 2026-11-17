@@ -13,8 +13,9 @@ import org.springframework.context.annotation.Import;
 import com.fruitstand.fruit.domain.Fruit;
 import com.fruitstand.fruit.domain.Unit;
 import com.fruitstand.fruit.domain.exception.DuplicateNameException;
-import com.fruitstand.fruit.infrastructure.persistence.JpaFruitRepository;
-import com.fruitstand.fruit.infrastructure.persistence.SpringDataFruitRepository;
+import com.fruitstand.fruit.platform.persistence.FruitEntity;
+import com.fruitstand.fruit.platform.persistence.JpaFruitRepository;
+import com.fruitstand.fruit.platform.persistence.SpringDataFruitRepository;
 
 /** Service con la base real (H2): cubre lo que el mock no ve, como el flush de Hibernate. */
 @DataJpaTest
@@ -31,8 +32,9 @@ class FruitServiceIntegrationTest {
 
 	@Test
 	void renamingToAnotherFruitsNameThrowsDuplicateName() {
-		repository.saveAndFlush(new Fruit("Apple", new BigDecimal("1000"), Unit.KG));
-		Long pear = repository.saveAndFlush(new Fruit("Pear", new BigDecimal("1000"), Unit.KG)).getId();
+		repository.saveAndFlush(FruitEntity.from(new Fruit("Apple", new BigDecimal("1000"), Unit.KG)));
+		Long pear = repository.saveAndFlush(FruitEntity.from(new Fruit("Pear", new BigDecimal("1000"), Unit.KG)))
+				.getId();
 
 		assertThatThrownBy(() -> service.update(pear, " Apple ", new BigDecimal("1000"), Unit.KG))
 				.isInstanceOf(DuplicateNameException.class);
