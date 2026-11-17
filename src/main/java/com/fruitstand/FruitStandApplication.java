@@ -1,13 +1,13 @@
-package com.puesto_frutas.puesto_frutas;
+package com.fruitstand;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PuestoFrutasApplication {
+public class FruitStandApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PuestoFrutasApplication.class, args);
+		SpringApplication.run(FruitStandApplication.class, args);
 	}
 
 }
